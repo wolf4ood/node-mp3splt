@@ -80,6 +80,13 @@ private:
 		int err = mp3splt_append_splitpoint(state, c_hundreths(point), NULL,
 				SPLT_SPLITPOINT);
 	}
+	void EraseSplitPoint() {
+		int err = 0;
+		mp3splt_erase_all_splitpoints(state, &err);
+	}
+	int SetSplitPath(char *path) {
+		return mp3splt_set_path_of_split(state, path);
+	}
 public:
 	static void Init(Handle<Object> target) {
 		HandleScope scope;
@@ -88,6 +95,8 @@ public:
 		t->InstanceTemplate()->SetInternalFieldCount(1);
 		t->SetClassName(String::NewSymbol("Splitter"));
 		NODE_SET_PROTOTYPE_METHOD(t, "appendSplitPoint", AppendSplitPoint);
+		NODE_SET_PROTOTYPE_METHOD(t, "setSplitPath", SetSplitPath);
+		NODE_SET_PROTOTYPE_METHOD(t, "eraseSplitPoint", EraseSplitPoint);
 		NODE_SET_PROTOTYPE_METHOD(t, "split", Split);
 		target->Set(String::NewSymbol("Splitter"), t->GetFunction());
 	}
@@ -122,6 +131,31 @@ public:
 			Splitter* hw = ObjectWrap::Unwrap<Splitter>(args.This());
 			String::Utf8Value uns(args[0]->ToString());
 			hw->AppendSplitPoint(strdup((*uns)));
+		} else {
+
+			return ThrowException(Exception::TypeError(String::New(
+					"One argument required")));
+
+		}
+		return args.This();
+	}
+	static Handle<Value> EraseSplitPoint(const Arguments& args) {
+		HandleScope scope;
+		Splitter* hw = ObjectWrap::Unwrap<Splitter>(args.This());
+		hw->EraseSplitPoint();
+
+		return args.This();
+	}
+	static Handle<Value> SetSplitPath(const Arguments& args) {
+		HandleScope scope;
+		if (args.Length() == 1) {
+			if (!args[0]->IsString()) {
+				return ThrowException(Exception::TypeError(String::New(
+						"Argument must be a string")));
+			}
+			Splitter* hw = ObjectWrap::Unwrap<Splitter>(args.This());
+			String::Utf8Value uns(args[0]->ToString());
+			hw->SetSplitPath(strdup((*uns)));
 		} else {
 
 			return ThrowException(Exception::TypeError(String::New(
@@ -181,10 +215,10 @@ public:
 		baton->hw->Unref();
 		Local<Value> argv[2];
 		if (baton->dfname) {
-		    Local<Array> attr = Array::New(baton->dim);
-		    for(int i=0;i<baton->dim;i++){
-		    	attr->Set(i,String::New(baton->dfname[i]));
-		    }
+			Local<Array> attr = Array::New(baton->dim);
+			for (int i = 0; i < baton->dim; i++) {
+				attr->Set(i, String::New(baton->dfname[i]));
+			}
 			argv[0] = attr;
 			argv[1] = Integer::New(baton->dim);
 		} else {
